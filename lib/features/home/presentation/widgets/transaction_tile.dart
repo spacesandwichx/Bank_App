@@ -10,6 +10,22 @@ class TransactionTile extends StatelessWidget {
 
   final TransactionEntity transaction;
 
+  IconData get _icon {
+    if (transaction.direction == TransactionDirection.incoming) {
+      return Icons.arrow_downward;
+    }
+    switch (transaction.type) {
+      case TransactionType.cardPurchase:
+        return Icons.card_giftcard;
+      case TransactionType.transfer:
+        return Icons.swap_horiz;
+      case TransactionType.deposit:
+        return Icons.arrow_downward;
+      case TransactionType.other:
+        return Icons.arrow_upward;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isIncoming = transaction.direction == TransactionDirection.incoming;
@@ -29,7 +45,7 @@ class TransactionTile extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             child: Icon(
-              isIncoming ? Icons.arrow_downward : Icons.arrow_upward,
+              _icon,
               size: 18,
               color: isIncoming ? AppColors.success : AppColors.naval,
             ),

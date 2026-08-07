@@ -1,0 +1,54 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Public directory of account-number → uid, used to resolve transfer recipients.
+    // Any authenticated user can look up an account. Only the owner can create their entry.
+    match /directory/{accountNumber} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+                    && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if request.auth != null
+                            && resource.data.uid == request.auth.uid;
+    }
+
+    match /users/{uid} {
+      // Only the owner can read their private balance/profile.
+      allow read: if request.auth != null && request.auth.uid == uid;
+
+      // Only the owner can create/delete their own account doc.
+      allow create, delete: if request.auth != null && request.auth.uid == uid;
+
+      // Update: owner can update anything; other users can only touch
+      // currentBalance + updatedAt (used to credit an incoming transfer).
+      allow update: if request.auth != null && (
+        request.auth.uid == uid ||
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['currentBalance', 'updatedAt'])
+      );
+
+      // Transactions subcollection.
+      match /transactions/{txId} {
+        // Only the owner can read their transaction history.
+        allow read: if request.auth != null && request.auth.uid == uid;
+
+        // Any authenticated user can append a transaction (used to write the
+        // recipient's "incoming" entry during a transfer). In production this
+        // would be enforced by a Cloud Function; for a demo this is acceptable.
+        allow create: if request.auth != null;
+      }
+
+      // Notifications subcollection.
+      match /notifications/{notifId} {
+        // Only the owner can read/update (mark as read) their notifications.
+        allow read: if request.auth != null && request.auth.uid == uid;
+        allow update: if request.auth != null && request.auth.uid == uid;
+
+        // Any authenticated user can create (used to notify the recipient of
+        // an incoming transfer).
+        allow create: if request.auth != null;
+      }
+    }
+  }
+}

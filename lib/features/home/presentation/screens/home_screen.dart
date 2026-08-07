@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/app_refresh_indicator.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
+import '../../../notifications/presentation/providers/notification_providers.dart';
 import '../providers/home_providers.dart';
-import '../widgets/balance_hero.dart';
+import '../widgets/balance_card.dart';
 import '../widgets/quick_actions.dart';
 import '../widgets/transaction_tile.dart';
 
@@ -14,94 +18,81 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final account = ref.watch(accountProvider);
-    final transactions = ref.watch(recentTransactionsProvider);
+    final accountAsync = ref.watch(accountStreamProvider);
+    final txAsync = ref.watch(recentTransactionsStreamProvider);
     final user = ref.watch(currentUserProvider);
     final firstName = (user?.displayName?.split(' ').first) ??
         (user?.email.split('@').first ?? 'Guest');
 
     return Scaffold(
       body: SafeArea(
-        child: Column(
-          children: [
-            _TopBar(name: firstName),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const SizedBox(height: 12),
-                    Text(
-                      'Prestige Wealth',
-                      textAlign: TextAlign.center,
-                      style: AppTextStyles.headline,
+        child: AppRefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(accountStreamProvider);
+            ref.invalidate(recentTransactionsStreamProvider);
+            await Future.delayed(const Duration(milliseconds: 400));
+          },
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _TopBar(name: firstName),
+                const SizedBox(height: 20),
+                accountAsync.when(
+                  data: (account) => BalanceCard(account: account),
+                  loading: () => const _BalanceLoading(),
+                  error: (e, _) => _ErrorBox(message: e.toString()),
+                ),
+                const SizedBox(height: 28),
+                QuickActions(
+                  actions: [
+                    QuickAction(
+                      icon: Icons.swap_horiz,
+                      label: 'Transfer',
+                      onTap: () => context.push(AppRoutes.transfer),
                     ),
-                    const SizedBox(height: 24),
-                    BalanceHero(account: account),
-                    const SizedBox(height: 32),
-                    QuickActions(
-                      actions: [
-                        QuickAction(
-                          icon: Icons.swap_horiz,
-                          label: 'Transfer',
-                          onTap: () {},
-                        ),
-                        QuickAction(
-                          icon: Icons.credit_card_outlined,
-                          label: 'Buy Cards',
-                          onTap: () {},
-                        ),
-                        QuickAction(
-                          icon: Icons.receipt_long_outlined,
-                          label: 'Statements',
-                          onTap: () {},
-                        ),
-                        QuickAction(
-                          icon: Icons.menu,
-                          label: 'Menu',
-                          onTap: () {},
-                        ),
-                      ],
+                    QuickAction(
+                      icon: Icons.credit_card_outlined,
+                      label: 'Buy Cards',
+                      onTap: () => context.go(AppRoutes.cards),
                     ),
-                    const SizedBox(height: 32),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Recent Transactions',
-                            style: AppTextStyles.title.copyWith(fontSize: 16)),
-                        TextButton(
-                          onPressed: () {},
-                          child: const Text('VIEW ALL'),
-                        ),
-                      ],
+                    QuickAction(
+                      icon: Icons.receipt_long_outlined,
+                      label: 'Statements',
+                      onTap: () => context.go(AppRoutes.history),
                     ),
-                    const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: AppColors.divider),
-                      ),
-                      child: Column(
-                        children: [
-                          for (var i = 0; i < transactions.length; i++) ...[
-                            TransactionTile(transaction: transactions[i]),
-                            if (i != transactions.length - 1)
-                              const Divider(height: 1),
-                          ],
-                        ],
-                      ),
+                    QuickAction(
+                      icon: Icons.menu,
+                      label: 'Menu',
+                      onTap: () => context.go(AppRoutes.menu),
                     ),
                   ],
                 ),
-              ),
+                const SizedBox(height: 32),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Recent Transactions',
+                        style: AppTextStyles.title.copyWith(fontSize: 16)),
+                    TextButton(
+                      onPressed: () => context.go(AppRoutes.history),
+                      child: const Text('VIEW ALL'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                txAsync.when(
+                  data: (list) => _TxList(items: list),
+                  loading: () => const _TxLoading(),
+                  error: (e, _) => _ErrorBox(message: e.toString()),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
-      bottomNavigationBar: const _BottomNav(),
     );
   }
 }
@@ -114,7 +105,7 @@ class _TopBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
           Container(
@@ -139,20 +130,14 @@ class _TopBar extends ConsumerWidget {
                 Text('Welcome back', style: AppTextStyles.bodyMuted),
                 Text(
                   name,
-                  style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600),
+                  style:
+                      AppTextStyles.body.copyWith(fontWeight: FontWeight.w600),
                 ),
               ],
             ),
           ),
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.search),
-            color: AppColors.textPrimary,
-          ),
-          IconButton(
-            onPressed: () => ref.read(authControllerProvider.notifier).signOut(),
-            icon: const Icon(Icons.logout),
-            color: AppColors.textPrimary,
+          _NotificationsButton(
+            unread: ref.watch(unreadNotificationCountProvider),
           ),
         ],
       ),
@@ -160,65 +145,144 @@ class _TopBar extends ConsumerWidget {
   }
 }
 
-class _BottomNav extends StatelessWidget {
-  const _BottomNav();
+class _TxList extends StatelessWidget {
+  const _TxList({required this.items});
+
+  final List<dynamic> items;
+
+  @override
+  Widget build(BuildContext context) {
+    if (items.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.divider),
+        ),
+        child: Text(
+          'No transactions yet',
+          style: AppTextStyles.bodyMuted,
+        ),
+      );
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Column(
+        children: [
+          for (var i = 0; i < items.length; i++) ...[
+            TransactionTile(transaction: items[i]),
+            if (i != items.length - 1) const Divider(height: 1),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _BalanceLoading extends StatelessWidget {
+  const _BalanceLoading();
 
   @override
   Widget build(BuildContext context) {
     return Container(
+      height: 130,
       decoration: BoxDecoration(
         color: AppColors.surface,
-        border: Border(top: BorderSide(color: AppColors.divider)),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.divider),
       ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: const [
-              _NavItem(icon: Icons.home_outlined, label: 'Home', selected: true),
-              _NavItem(icon: Icons.credit_card_outlined, label: 'Cards'),
-              _NavItem(icon: Icons.history, label: 'History'),
-              _NavItem(icon: Icons.menu, label: 'Menu'),
-            ],
-          ),
-        ),
+      child: const Center(
+        child: CircularProgressIndicator(color: AppColors.gold),
       ),
     );
   }
 }
 
-class _NavItem extends StatelessWidget {
-  const _NavItem({
-    required this.icon,
-    required this.label,
-    this.selected = false,
-  });
+class _NotificationsButton extends StatelessWidget {
+  const _NotificationsButton({required this.unread});
 
-  final IconData icon;
-  final String label;
-  final bool selected;
+  final int unread;
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? AppColors.gold : AppColors.textSecondary;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: color,
-              fontSize: 11,
-              fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        IconButton(
+          onPressed: () => context.push(AppRoutes.notifications),
+          icon: const Icon(Icons.notifications_outlined),
+          color: AppColors.textPrimary,
+        ),
+        if (unread > 0)
+          Positioned(
+            right: 6,
+            top: 6,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+              constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+              decoration: BoxDecoration(
+                color: AppColors.gold,
+                borderRadius: BorderRadius.circular(9),
+                border: Border.all(color: AppColors.background, width: 1.5),
+              ),
+              child: Text(
+                unread > 9 ? '9+' : '$unread',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
           ),
-        ],
+      ],
+    );
+  }
+}
+
+class _TxLoading extends StatelessWidget {
+  const _TxLoading();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 24),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: const CircularProgressIndicator(color: AppColors.gold),
+    );
+  }
+}
+
+class _ErrorBox extends StatelessWidget {
+  const _ErrorBox({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Text(
+        message,
+        style: AppTextStyles.bodyMuted.copyWith(color: AppColors.danger),
       ),
     );
   }

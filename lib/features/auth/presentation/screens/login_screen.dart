@@ -109,7 +109,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   onFieldSubmitted: (_) => _submit(),
                   suffix: IconButton(
                     icon: Icon(
-                      _obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                      _obscure
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
                       color: AppColors.textSecondary,
                       size: 20,
                     ),
@@ -148,31 +150,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       : Text(_signUpMode ? 'Create Account' : 'Secure Login'),
                 ),
                 const SizedBox(height: 20),
-                Row(
-                  children: const [
-                    Expanded(child: Divider()),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 12),
-                      child: Text('or',
-                          style: TextStyle(color: AppColors.textSecondary)),
-                    ),
-                    Expanded(child: Divider()),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                Center(
-                  child: Container(
-                    width: 56,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.divider),
-                    ),
-                    child: const Icon(Icons.fingerprint,
-                        color: AppColors.gold, size: 30),
-                  ),
-                ),
-                const SizedBox(height: 32),
                 TextButton(
                   onPressed: isLoading
                       ? null
@@ -187,8 +164,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.lock_outline,
-                        size: 14, color: AppColors.textMuted),
+                    const Icon(
+                      Icons.lock_outline,
+                      size: 14,
+                      color: AppColors.textMuted,
+                    ),
                     const SizedBox(width: 6),
                     Text(
                       '256-bit Bank Grade Encryption',
