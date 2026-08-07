@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "788136656043",
+    "project_id": "flutterbankapp-db6b9",
+    "storage_bucket": "flutterbankapp-db6b9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:788136656043:android:3fb29f7089ba6315c38bee",
+        "android_client_info": {
+          "package_name": "com.example.bank_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC0KUyGSMTVSI6bZF2RRtLEigrPniDTwgg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
