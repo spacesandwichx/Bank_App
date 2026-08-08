@@ -11,4 +11,12 @@ class AppRoutes {
 
   static const String transfer = '/transfer';
   static const String notifications = '/notifications';
+
+  static const String myCards = '/my-cards';
+  static const String applyCard = '/my-cards/apply';
+  static const String cheques = '/cheques';
+  static const String applyCheque = '/cheques/apply';
+
+  static const String profile = '/profile';
+  static const String contactUs = '/contact-us';
 }

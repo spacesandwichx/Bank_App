@@ -78,7 +78,7 @@ class AccountRemoteDataSource {
       batch.set(
         _notifCol(uid).doc(),
         NotificationModel.toCreateMap(
-          title: 'Welcome to Prestige Wealth',
+          title: 'Welcome to Al Yaqeen Bank',
           body: 'Your account has been credited with your welcome bonus.',
           type: NotificationType.deposit,
           amount: 5000.00,
@@ -122,13 +122,14 @@ class AccountRemoteDataSource {
         .map((snap) => snap.docs.map(TransactionModel.fromDoc).toList());
   }
 
-  Future<void> purchase({
+  Future<String> purchase({
     required String uid,
     required String merchant,
     required double amount,
     required TransactionType type,
     String? description,
   }) async {
+    final txRef = _txCol(uid).doc();
     await _firestore.runTransaction((tx) async {
       final userSnap = await tx.get(_userDoc(uid));
       final data = userSnap.data() ?? const <String, dynamic>{};
@@ -141,7 +142,7 @@ class AccountRemoteDataSource {
         'updatedAt': FieldValue.serverTimestamp(),
       });
       tx.set(
-        _txCol(uid).doc(),
+        txRef,
         TransactionModel.toCreateMap(
           merchant: merchant,
           amount: amount,
@@ -165,6 +166,7 @@ class AccountRemoteDataSource {
         ),
       );
     });
+    return txRef.id;
   }
 
   Future<({String recipientUid, String recipientName})> lookupAccount(
@@ -181,7 +183,7 @@ class AccountRemoteDataSource {
     );
   }
 
-  Future<String> transfer({
+  Future<({String recipientName, String txId})> transfer({
     required String senderUid,
     required String recipientAccountNumber,
     required double amount,
@@ -204,6 +206,8 @@ class AccountRemoteDataSource {
     final senderName =
         (senderSnap.data()?['displayName'] as String?) ?? 'User';
 
+    final senderTxRef = _txCol(senderUid).doc();
+
     await _firestore.runTransaction((tx) async {
       final freshSender = await tx.get(_userDoc(senderUid));
       final senderBalance =
@@ -224,7 +228,7 @@ class AccountRemoteDataSource {
       });
 
       tx.set(
-        _txCol(senderUid).doc(),
+        senderTxRef,
         TransactionModel.toCreateMap(
           merchant: 'Transfer to $recipientName',
           amount: amount,
@@ -266,7 +270,7 @@ class AccountRemoteDataSource {
       );
     });
 
-    return recipientName;
+    return (recipientName: recipientName, txId: senderTxRef.id);
   }
 
   Stream<List<NotificationModel>> watchNotifications(String uid, {int? limit}) {

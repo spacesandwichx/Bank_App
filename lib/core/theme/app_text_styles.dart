@@ -6,23 +6,25 @@ import 'app_colors.dart';
 class AppTextStyles {
   AppTextStyles._();
 
-  static TextStyle get displayLarge => GoogleFonts.playfairDisplay(
+  static TextStyle get displayLarge => GoogleFonts.manrope(
         fontSize: 40,
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w800,
         color: AppColors.textPrimary,
-        letterSpacing: -0.5,
+        letterSpacing: -1.0,
       );
 
-  static TextStyle get displayMedium => GoogleFonts.playfairDisplay(
+  static TextStyle get displayMedium => GoogleFonts.manrope(
         fontSize: 32,
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w800,
         color: AppColors.textPrimary,
+        letterSpacing: -0.8,
       );
 
-  static TextStyle get headline => GoogleFonts.playfairDisplay(
+  static TextStyle get headline => GoogleFonts.manrope(
         fontSize: 24,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w700,
         color: AppColors.textPrimary,
+        letterSpacing: -0.4,
       );
 
   static TextStyle get title => GoogleFonts.inter(
@@ -56,10 +58,10 @@ class AppTextStyles {
         letterSpacing: 0.5,
       );
 
-  static TextStyle get balance => GoogleFonts.playfairDisplay(
+  static TextStyle get balance => GoogleFonts.manrope(
         fontSize: 36,
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w800,
         color: AppColors.textPrimary,
-        letterSpacing: -0.5,
+        letterSpacing: -1.2,
       );
 }

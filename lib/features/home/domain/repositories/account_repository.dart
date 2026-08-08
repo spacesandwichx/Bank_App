@@ -12,7 +12,7 @@ abstract class AccountRepository {
 
   Stream<List<TransactionEntity>> watchTransactions(String uid, {int? limit});
 
-  Future<void> purchase({
+  Future<String> purchase({
     required String uid,
     required String merchant,
     required double amount,
@@ -20,7 +20,7 @@ abstract class AccountRepository {
     String? description,
   });
 
-  Future<String> transfer({
+  Future<({String recipientName, String txId})> transfer({
     required String senderUid,
     required String recipientAccountNumber,
     required double amount,

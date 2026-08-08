@@ -49,6 +49,20 @@ service cloud.firestore {
         // an incoming transfer).
         allow create: if request.auth != null;
       }
+
+      // Bank cards subcollection (issued Visa/Mastercard applications).
+      // Only the owner can read/create/update their own cards.
+      match /bankCards/{cardId} {
+        allow read, create, update, delete:
+          if request.auth != null && request.auth.uid == uid;
+      }
+
+      // Cheque requests subcollection.
+      // Only the owner can read/create/update their own cheques.
+      match /cheques/{chequeId} {
+        allow read, create, update, delete:
+          if request.auth != null && request.auth.uid == uid;
+      }
     }
   }
 }

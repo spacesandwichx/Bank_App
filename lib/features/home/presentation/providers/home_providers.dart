@@ -50,17 +50,18 @@ class AccountActionsController extends StateNotifier<AsyncValue<void>> {
 
   final Ref _ref;
 
-  Future<void> purchase({
+  Future<String?> purchase({
     required String merchant,
     required double amount,
     required TransactionType type,
     String? description,
   }) async {
     final uid = _ref.read(_currentUidProvider);
-    if (uid == null) return;
+    if (uid == null) return null;
     state = const AsyncValue.loading();
+    String? txId;
     state = await AsyncValue.guard(() async {
-      await _ref.read(accountRepositoryProvider).purchase(
+      txId = await _ref.read(accountRepositoryProvider).purchase(
             uid: uid,
             merchant: merchant,
             amount: amount,
@@ -68,9 +69,10 @@ class AccountActionsController extends StateNotifier<AsyncValue<void>> {
             description: description,
           );
     });
+    return state.hasError ? null : txId;
   }
 
-  Future<String?> transfer({
+  Future<({String recipientName, String txId})?> transfer({
     required String recipientAccountNumber,
     required double amount,
     String? note,
@@ -78,16 +80,16 @@ class AccountActionsController extends StateNotifier<AsyncValue<void>> {
     final uid = _ref.read(_currentUidProvider);
     if (uid == null) return null;
     state = const AsyncValue.loading();
-    String? recipientName;
+    ({String recipientName, String txId})? result;
     state = await AsyncValue.guard(() async {
-      recipientName = await _ref.read(accountRepositoryProvider).transfer(
+      result = await _ref.read(accountRepositoryProvider).transfer(
             senderUid: uid,
             recipientAccountNumber: recipientAccountNumber,
             amount: amount,
             note: note,
           );
     });
-    return recipientName;
+    return state.hasError ? null : result;
   }
 }
 

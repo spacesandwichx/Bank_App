@@ -6,6 +6,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../home/domain/entities/transaction_entity.dart';
 import '../../../home/presentation/providers/home_providers.dart';
+import '../../../receipts/presentation/screens/receipt_screen.dart';
 import '../../domain/entities/gift_card.dart';
 
 class PurchaseSheet extends ConsumerStatefulWidget {
@@ -152,7 +153,7 @@ class _PurchaseSheetState extends ConsumerState<PurchaseSheet> {
   }
 
   Future<void> _confirm() async {
-    await ref.read(accountActionsProvider.notifier).purchase(
+    final txId = await ref.read(accountActionsProvider.notifier).purchase(
           merchant: '${widget.card.brand} Gift Card',
           amount: _selected,
           type: TransactionType.cardPurchase,
@@ -163,20 +164,37 @@ class _PurchaseSheetState extends ConsumerState<PurchaseSheet> {
     final state = ref.read(accountActionsProvider);
     Navigator.of(context).pop();
 
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(
-            state.hasError
-                ? 'Purchase failed: ${state.error}'
-                : '${widget.card.brand} card purchased',
+    if (state.hasError || txId == null) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text('Purchase failed: ${state.error}'),
+            backgroundColor: AppColors.danger,
+            behavior: SnackBarBehavior.floating,
           ),
-          backgroundColor:
-              state.hasError ? AppColors.danger : AppColors.success,
-          behavior: SnackBarBehavior.floating,
+        );
+      return;
+    }
+
+    await Navigator.of(context, rootNavigator: true).push(
+      MaterialPageRoute(
+        builder: (_) => ReceiptScreen(
+          kind: ReceiptKind.cardPurchase,
+          title: '${widget.card.brand} gift card',
+          amount: _selected,
+          reference: txId,
+          timestamp: DateTime.now(),
+          rows: [
+            ReceiptRow(label: 'Product', value: widget.card.brand),
+            ReceiptRow(
+              label: 'Denomination',
+              value: Formatters.money(_selected),
+            ),
+          ],
         ),
-      );
+      ),
+    );
   }
 }
 

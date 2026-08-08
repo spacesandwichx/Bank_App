@@ -5,9 +5,15 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/providers/auth_providers.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
+import '../../features/bank_cards/presentation/screens/apply_card_screen.dart';
+import '../../features/bank_cards/presentation/screens/my_cards_screen.dart';
 import '../../features/cards/presentation/screens/cards_screen.dart';
+import '../../features/cheques/presentation/screens/apply_cheque_screen.dart';
+import '../../features/cheques/presentation/screens/cheques_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
+import '../../features/menu/presentation/screens/contact_us_screen.dart';
 import '../../features/menu/presentation/screens/menu_screen.dart';
+import '../../features/menu/presentation/screens/profile_screen.dart';
 import '../../features/notifications/presentation/screens/notifications_screen.dart';
 import '../../features/transactions/presentation/screens/history_screen.dart';
 import '../../features/transfer/presentation/screens/transfer_screen.dart';
@@ -46,6 +52,36 @@ final routerProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: _rootNavigatorKey,
         path: AppRoutes.notifications,
         builder: (context, state) => const NotificationsScreen(),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: AppRoutes.myCards,
+        builder: (context, state) => const MyCardsScreen(),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: AppRoutes.applyCard,
+        builder: (context, state) => const ApplyCardScreen(),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: AppRoutes.cheques,
+        builder: (context, state) => const ChequesScreen(),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: AppRoutes.applyCheque,
+        builder: (context, state) => const ApplyChequeScreen(),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: AppRoutes.profile,
+        builder: (context, state) => const ProfileScreen(),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: AppRoutes.contactUs,
+        builder: (context, state) => const ContactUsScreen(),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {

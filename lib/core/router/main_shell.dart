@@ -17,9 +17,9 @@ class MainShell extends ConsumerWidget {
       label: 'Home',
     ),
     _TabItem(
-      icon: Icons.credit_card_outlined,
-      selectedIcon: Icons.credit_card,
-      label: 'Cards',
+      icon: Icons.card_giftcard_outlined,
+      selectedIcon: Icons.card_giftcard,
+      label: 'Vouchers',
     ),
     _TabItem(
       icon: Icons.history,

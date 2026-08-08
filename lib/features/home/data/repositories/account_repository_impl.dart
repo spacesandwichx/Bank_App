@@ -29,7 +29,7 @@ class AccountRepositoryImpl implements AccountRepository {
       _remote.watchTransactions(uid, limit: limit);
 
   @override
-  Future<void> purchase({
+  Future<String> purchase({
     required String uid,
     required String merchant,
     required double amount,
@@ -46,7 +46,7 @@ class AccountRepositoryImpl implements AccountRepository {
   }
 
   @override
-  Future<String> transfer({
+  Future<({String recipientName, String txId})> transfer({
     required String senderUid,
     required String recipientAccountNumber,
     required double amount,

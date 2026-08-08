@@ -8,23 +8,24 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../home/presentation/providers/home_providers.dart';
 import '../../../receipts/presentation/screens/receipt_screen.dart';
+import '../providers/cheque_providers.dart';
 
-class TransferScreen extends ConsumerStatefulWidget {
-  const TransferScreen({super.key});
+class ApplyChequeScreen extends ConsumerStatefulWidget {
+  const ApplyChequeScreen({super.key});
 
   @override
-  ConsumerState<TransferScreen> createState() => _TransferScreenState();
+  ConsumerState<ApplyChequeScreen> createState() => _ApplyChequeScreenState();
 }
 
-class _TransferScreenState extends ConsumerState<TransferScreen> {
+class _ApplyChequeScreenState extends ConsumerState<ApplyChequeScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _accountController = TextEditingController();
+  final _payeeController = TextEditingController();
   final _amountController = TextEditingController();
   final _noteController = TextEditingController();
 
   @override
   void dispose() {
-    _accountController.dispose();
+    _payeeController.dispose();
     _amountController.dispose();
     _noteController.dispose();
     super.dispose();
@@ -32,13 +33,15 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final accountAsync = ref.watch(accountStreamProvider);
-    final action = ref.watch(accountActionsProvider);
-    final myAccount = accountAsync.valueOrNull;
-    final balance = myAccount?.currentBalance ?? 0.0;
+    final action = ref.watch(chequeActionsProvider);
+    final balance = ref
+            .watch(accountStreamProvider)
+            .valueOrNull
+            ?.currentBalance ??
+        0;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Transfer Money')),
+      appBar: AppBar(title: const Text('Request a cheque')),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -47,32 +50,57 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _BalanceHeader(balance: balance),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.divider),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: AppColors.gold.withValues(alpha: 0.12),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.account_balance_wallet_outlined,
+                          color: AppColors.gold,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Available balance',
+                              style: AppTextStyles.bodyMuted),
+                          Text(
+                            Formatters.money(balance),
+                            style: AppTextStyles.title
+                                .copyWith(fontWeight: FontWeight.w700),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
                 const SizedBox(height: 24),
-                _FieldLabel('Recipient account number'),
+                _FieldLabel('Payee name'),
                 const SizedBox(height: 8),
                 TextFormField(
-                  controller: _accountController,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                    LengthLimitingTextInputFormatter(10),
-                  ],
+                  controller: _payeeController,
+                  textCapitalization: TextCapitalization.words,
                   decoration: const InputDecoration(
-                    hintText: '10-digit account number',
-                    prefixIcon: Icon(Icons.account_circle_outlined,
+                    hintText: 'Who is this cheque for?',
+                    prefixIcon: Icon(Icons.person_outline,
                         size: 20, color: AppColors.textSecondary),
                   ),
                   validator: (v) {
                     final value = v?.trim() ?? '';
-                    if (value.isEmpty) return 'Enter an account number';
-                    if (value.length != 10) {
-                      return 'Account number must be 10 digits';
-                    }
-                    if (myAccount != null &&
-                        value == myAccount.accountNumber) {
-                      return 'You cannot transfer to your own account';
-                    }
+                    if (value.length < 2) return 'Enter the payee name';
                     return null;
                   },
                 ),
@@ -84,6 +112,9 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                  ],
                   decoration: const InputDecoration(
                     hintText: '0.00',
                     prefixIcon: Icon(Icons.attach_money,
@@ -120,9 +151,11 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
                           width: 22,
                           height: 22,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2.4, color: Colors.white),
+                            strokeWidth: 2.4,
+                            color: Colors.white,
+                          ),
                         )
-                      : const Text('Send Transfer'),
+                      : const Text('Issue cheque'),
                 ),
               ],
             ),
@@ -136,26 +169,26 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
     if (!_formKey.currentState!.validate()) return;
     FocusScope.of(context).unfocus();
 
+    final payee = _payeeController.text.trim();
     final amount = double.parse(_amountController.text.trim());
-    final accountNumber = _accountController.text.trim();
     final note = _noteController.text.trim();
 
-    final result =
-        await ref.read(accountActionsProvider.notifier).transfer(
-              recipientAccountNumber: accountNumber,
-              amount: amount,
-              note: note.isEmpty ? null : note,
-            );
+    final result = await ref.read(chequeActionsProvider.notifier).request(
+          payeeName: payee,
+          amount: amount,
+          note: note.isEmpty ? null : note,
+        );
 
     if (!mounted) return;
-    final state = ref.read(accountActionsProvider);
-
+    final state = ref.read(chequeActionsProvider);
     if (state.hasError || result == null) {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(
           SnackBar(
-            content: Text('Transfer failed: ${_readableError(state.error)}'),
+            content: Text(
+              'Cheque failed: ${state.error?.toString().replaceFirst('Exception: ', '') ?? 'Unknown error'}',
+            ),
             backgroundColor: AppColors.danger,
             behavior: SnackBarBehavior.floating,
           ),
@@ -167,33 +200,21 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
     await Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute(
         builder: (_) => ReceiptScreen(
-          kind: ReceiptKind.transfer,
-          title: 'Transfer sent',
-          amount: amount,
-          reference: result.txId,
+          kind: ReceiptKind.cheque,
+          title: 'Cheque issued',
+          amount: result.amount,
+          reference: result.number,
           timestamp: DateTime.now(),
+          statusLabel: 'Pending',
+          statusColor: AppColors.gold,
           rows: [
-            ReceiptRow(label: 'To', value: result.recipientName),
-            ReceiptRow(label: 'Account', value: accountNumber),
-            if (note.isNotEmpty) ReceiptRow(label: 'Note', value: note),
+            ReceiptRow(label: 'Payee', value: result.payeeName),
+            if (result.note != null && result.note!.isNotEmpty)
+              ReceiptRow(label: 'Note', value: result.note!),
           ],
         ),
       ),
     );
-  }
-
-  String _readableError(Object? error) {
-    final text = error?.toString() ?? 'Unknown error';
-    if (text.contains('Account number not found')) {
-      return 'Recipient account not found';
-    }
-    if (text.contains('own account')) {
-      return 'You cannot transfer to your own account';
-    }
-    if (text.contains('Insufficient balance')) {
-      return 'Insufficient balance';
-    }
-    return text.replaceFirst('Exception: ', '');
   }
 }
 
@@ -206,52 +227,7 @@ class _FieldLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style:
-          AppTextStyles.bodyMuted.copyWith(fontWeight: FontWeight.w500),
-    );
-  }
-}
-
-class _BalanceHeader extends StatelessWidget {
-  const _BalanceHeader({required this.balance});
-
-  final double balance;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.divider),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: AppColors.gold.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.account_balance_wallet_outlined,
-                color: AppColors.gold),
-          ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Available balance', style: AppTextStyles.bodyMuted),
-              Text(
-                Formatters.money(balance),
-                style:
-                    AppTextStyles.title.copyWith(fontWeight: FontWeight.w700),
-              ),
-            ],
-          ),
-        ],
-      ),
+      style: AppTextStyles.bodyMuted.copyWith(fontWeight: FontWeight.w500),
     );
   }
 }

@@ -85,7 +85,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 AuthTextField(
                   controller: _emailController,
                   label: 'Email',
-                  hint: 'you@lydianbank.com',
+                  hint: 'you@yaqeenbank.ly',
                   prefixIcon: Icons.mail_outline,
                   keyboardType: TextInputType.emailAddress,
                   textInputAction: TextInputAction.next,
@@ -157,7 +157,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   child: Text(
                     _signUpMode
                         ? 'Already have an account? Sign in'
-                        : 'New to Lydian? Create account',
+                        : 'New to Yaqeen Bank? Create account',
                   ),
                 ),
                 const SizedBox(height: 16),

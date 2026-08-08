@@ -4,7 +4,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 
 class BrandMark extends StatelessWidget {
-  const BrandMark({super.key, this.title = 'Lydian', this.subtitle = 'PRIVATE WEALTH'});
+  const BrandMark({super.key, this.title = 'Yaqeen Bank', this.subtitle = 'PRIVATE BANKING'});
 
   final String title;
   final String subtitle;
